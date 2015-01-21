@@ -1,0 +1,41 @@
+package h;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Scanner;
+
+public class collection {
+ private ArrayList<Double> ha =new ArrayList<Double>();
+public void print(){
+	for (int i=0; i<ha.size();i++){
+	//	System.out.print(ha.);
+		System.out.println(ha.get(i) );
+	}
+	
+}
+public void setnumber(String s){
+	double g= Double.parseDouble(s); 
+	ha.add(g);
+}
+public void sort(){
+//	ha.sort(null);
+	Collections.sort(ha);
+}
+ 
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		collection l= new collection();
+		Scanner s = new Scanner(System.in);
+		while (s.hasNextLine()){
+			String number=s.nextLine();
+		//	double g= Double.parseDouble(number); 
+		//	l.ha.add(g);
+			//Collections.sort(l.ha);
+			l.setnumber(number);
+			l.sort();
+			l.print();
+		}s.close();
+		System.exit(0);;
+	}
+
+}
