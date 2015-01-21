@@ -1,0 +1,35 @@
+package h;
+
+
+public class hhh {
+	
+	 private String namik;
+	 private double num;
+	 
+	public hhh(String s, String m) {
+		setNum(s); 
+		setNamik(m);
+	}
+	  
+	 
+	 
+	 
+		public static void main(String[] args) {
+			// TODO Auto-generated method stub
+			 
+	}
+		public String getNamik() {
+			return namik;
+		}
+
+		public void setNamik(String namik) {
+			this.namik = namik;
+		}
+		public double getNum() {
+			return num;
+		}
+		public void setNum(String numi) {
+		 num=Double.parseDouble(numi);
+		}
+}
+
