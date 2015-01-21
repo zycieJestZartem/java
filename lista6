@@ -1,0 +1,260 @@
+package lista6;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Scanner;
+import java.util.StringTokenizer;
+import java.util.Vector;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
+public class myCalc implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	Vector<CalVar> vars = new Vector<CalVar>(1, 1);
+	transient ScriptEngineManager mgr = new ScriptEngineManager();
+	transient ScriptEngine engine = mgr.getEngineByName("JavaScript");
+	transient boolean controller = false;
+	transient int index = 0;
+
+	public void Print(String a) {
+		for (int i = 0; i < vars.size(); i++) {
+			if (vars.get(i).getName().equalsIgnoreCase(a.trim()))
+				System.out.print(vars.get(i).getName() + "="
+						+ vars.get(i).getValue() + System.lineSeparator());
+		}
+	}
+
+	public void PrintAll() {
+		for (int i = 0; i < vars.size(); i++) {
+			System.out.print(vars.get(i).getName() + "="
+					+ vars.get(i).getValue() + System.lineSeparator());
+		}
+	}
+
+	public void LastDef(String a) {
+		for (int i = 0; i < vars.size(); i++) {
+			if (vars.get(i).getName().equalsIgnoreCase(a.trim()))
+				System.out.print(vars.get(i).getLastLine()
+						+ System.lineSeparator());
+		}
+	}
+
+	public void LastExp(String a) {
+		for (int i = 0; i < vars.size(); i++) {
+			if (vars.get(i).getName().equalsIgnoreCase(a.trim()))
+				System.out.print(vars.get(i).getLastExp()
+						+ System.lineSeparator());
+		}
+	}
+
+	public void Save(String filename) {
+
+		String filePath = new File("").getAbsolutePath();
+		ObjectOutputStream out;
+		try {
+			out = new ObjectOutputStream(new FileOutputStream(filePath
+					+ filename));
+			out.writeObject(this);
+			out.close();
+			System.out.print("saved");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public String countNormal(String token) throws ParsingException {
+		try {
+			ScriptEngineManager mgr = new ScriptEngineManager();
+			ScriptEngine engine = mgr.getEngineByName("JavaScript");
+
+			String my = engine.eval(token).toString();
+			String result = token + "=" + my;
+			return result;
+		} catch (ScriptException ex) {
+			throw new ParsingException(InputErrCode.UNCOUNTABLE_STRING);
+		}
+
+	}
+
+	public String replacement(String token, String line)
+			throws ParsingException {
+		int counter = 0;
+		loops: while (counter <= 2 * token.length()) {
+			for (int k = 0; k < vars.size(); k++) {
+				String x = vars.get(k).getName();
+				String replacement = String.valueOf(vars.get(k).getValue());
+				if (token.contains(x) == true) {
+					vars.get(k).setLastExp(line);
+					token = token.replaceAll(x, replacement);
+				}
+				if (!token.matches(".*[a-zA-Z].*"))
+					break loops;
+			}
+			counter++;
+		}
+		if (counter > (token.length())) {
+			throw new ParsingException(InputErrCode.UNCOUNTABLE_STRING);
+		}
+		return token;
+	}
+
+	public double counterStrike(String temp, String token, String line)
+			throws ParsingException {
+		try {
+			ScriptEngineManager mgr = new ScriptEngineManager();
+			ScriptEngine engine = mgr.getEngineByName("JavaScript");
+			double my = new Double(engine.eval(token).toString());
+			if (controller == false) {
+				if (vars.size() == 10) {
+					throw new ParsingException(InputErrCode.TOO_MANY_VARS);
+				}
+				CalVar h = new CalVar(temp, my, line, line);
+				vars.add(h);
+				index = vars.size() - 1;
+			} else {
+				vars.get(index).setValue(my);
+				vars.get(index).setLastLine(line);
+				vars.get(index).setLastExp(line);
+			}
+
+			return my;
+		} catch (ScriptException ex) {
+			throw new ParsingException(InputErrCode.UNCOUNTABLE_STRING);
+		}
+	}
+
+	public String count(String line) throws ParsingException {
+
+		StringTokenizer st = new StringTokenizer(line, "=");
+		if (st.countTokens() > 2 || st.countTokens() < 1) {
+			throw new ParsingException(InputErrCode.UNCOUNTABLE_STRING);
+		} else if (st.countTokens() == 1) {
+			String token = st.nextToken();
+			return countNormal(token);
+		} else {
+			String token = st.nextToken().trim();
+			if (token.length() != 1) {
+				throw new ParsingException(InputErrCode.TOO_LONG_VAR);
+			}
+
+			for (int k = 0; k < vars.size(); k++) {
+				controller = false;
+				if (vars.get(k).getName().equalsIgnoreCase(token)) {
+					index = k;
+					controller = true;
+					break;
+				}
+			}
+
+			String temp = token;
+			token = st.nextToken();
+			if (vars.size() != 0) {
+				token = replacement(token, line);
+			}
+			counterStrike(temp, token, line);
+
+			String result = vars.get(index).getName() + "="
+					+ vars.get(index).getValue();
+			return result;
+
+		}
+
+	}
+
+	public static myCalc Restore(String filename) throws ParsingException,
+			IOException {
+		myCalc one = null;
+
+		String filePath = new File("").getAbsolutePath();
+
+		ObjectInputStream in = null;
+		try {
+			in = new ObjectInputStream(new FileInputStream(filePath + filename));
+			one = (myCalc) in.readObject();
+		} catch (FileNotFoundException e1) {
+			throw new ParsingException(InputErrCode.FILE_NOT_FOUND, filename);
+		} catch (IOException e1) {
+			throw new ParsingException(InputErrCode.FILE_NOT_FOUND, filename);
+		} catch (ClassNotFoundException e) {
+			throw new ParsingException(InputErrCode.FILE_NOT_FOUND, filename);
+		} finally {
+			System.out.print("restored");
+			in.close();
+			one.PrintAll();
+		}
+		return (one);
+	}
+
+	public void evaluate(String stuff) {
+
+		try {
+			System.out.print(count(stuff) + System.lineSeparator());
+		} catch (ParsingException e) {
+			// TODO Auto-generated catch block
+			System.err.print(new ParsingException(e.getInputErrCode())
+					+ System.lineSeparator());
+		}
+	}
+
+	public static void main(String[] args) throws ParsingException,
+			FileNotFoundException, IOException {
+		myCalc one = new myCalc();
+		Scanner s = null;
+		System.out.print(one.countNormal("8-9"));
+		one = myCalc.Restore("//s.txt");
+		s = new Scanner(System.in);
+		while (s.hasNextLine()) {
+			String line = s.nextLine();
+			if (line.equals(""))
+				line = s.nextLine();
+			StringTokenizer st = new StringTokenizer(line, " ");
+			String token = st.nextToken();
+			 switch (token.toUpperCase()) {
+			case "PRINT":
+				token = st.nextToken().toUpperCase();
+				if (token.equals("ALL"))
+					one.PrintAll();
+				else
+					one.Print(token);
+				break;
+			case "LASTDEF":
+				token = st.nextToken();
+				one.LastDef(token);
+				break;
+			case "LASTEXP":
+				token = st.nextToken();
+				one.LastExp(token);
+				break;
+			case "SAVE":
+				token = st.nextToken();
+				one.Save(token);
+				break;
+			case "RESTORE":
+				token = st.nextToken();
+				
+				one = myCalc.Restore(token);
+				break;
+			default:
+				one.evaluate(line);
+			}
+
+		}
+
+		s.close();
+		System.exit(6);
+	}
+}
